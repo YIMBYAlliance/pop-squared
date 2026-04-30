@@ -12,10 +12,10 @@ export default function NavBar() {
       </Link>
       {isDev && (
         <Link
-          href="/compute"
+          href="/migrate"
           className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors"
         >
-          Compute
+          Admin
         </Link>
       )}
     </nav>

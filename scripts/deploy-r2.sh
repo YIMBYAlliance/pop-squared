@@ -24,9 +24,28 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 DATA_DIR="$PROJECT_DIR/data"
 BUCKET_NAME="${R2_BUCKET:-pop-squared-data}"
-TIF_FILE="GHS_POP_E2025_GLOBE_R2023A_4326_30ss_V1_0.tif"
 
-echo "=== deploy-r2.sh ==="
+# Pick which raster to upload based on first arg:
+#   ./deploy-r2.sh        → GHS global raster (default)
+#   ./deploy-r2.sh ghs    → GHS global raster
+#   ./deploy-r2.sh uk     → UK (E&W + Scotland) ONS raster
+TARGET="${1:-ghs}"
+case "$TARGET" in
+  ghs)
+    TIF_FILE="GHS_POP_E2025_GLOBE_R2023A_4326_30ss_V1_0.tif"
+    ENV_VAR="GEOTIFF_URL"
+    ;;
+  uk)
+    TIF_FILE="uk-pop-100m-4326.tif"
+    ENV_VAR="GEOTIFF_UK_URL"
+    ;;
+  *)
+    echo "Error: unknown target '$TARGET'. Use 'ghs' or 'uk'."
+    exit 1
+    ;;
+esac
+
+echo "=== deploy-r2.sh ($TARGET) ==="
 echo "Script dir:  $SCRIPT_DIR"
 echo "Project dir: $PROJECT_DIR"
 echo "Data dir:    $DATA_DIR"
@@ -45,7 +64,11 @@ if [ -f "$ENV_FILE" ]; then
 fi
 
 if [ ! -f "$DATA_DIR/$TIF_FILE" ]; then
-  echo "Error: $TIF_FILE not found in data/. Run scripts/download-data.sh first."
+  if [ "$TARGET" = "uk" ]; then
+    echo "Error: $TIF_FILE not found in data/. Run 'uv run scripts/build-uk-raster.py' first."
+  else
+    echo "Error: $TIF_FILE not found in data/. Run scripts/download-data.sh first."
+  fi
   exit 1
 fi
 
@@ -61,10 +84,10 @@ if [ -z "${R2_ACCOUNT_ID:-}" ] || [ -z "${R2_ACCESS_KEY_ID:-}" ] || [ -z "${R2_S
 fi
 
 ENDPOINT="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+SIZE_MB=$(du -m "$DATA_DIR/$TIF_FILE" | awk '{print $1}')
 
-echo "Uploading $TIF_FILE (~384MB) to R2 bucket '$BUCKET_NAME'..."
+echo "Uploading $TIF_FILE (~${SIZE_MB}MB) to R2 bucket '$BUCKET_NAME'..."
 echo "Endpoint: $ENDPOINT"
-echo "This may take a few minutes."
 echo ""
 
 AWS_ACCESS_KEY_ID="$R2_ACCESS_KEY_ID" \
@@ -79,6 +102,6 @@ echo ""
 echo "Next steps:"
 echo "  1. Ensure public access is enabled on the bucket in the Cloudflare dashboard"
 echo "     R2 > $BUCKET_NAME > Settings > Public access > Enable r2.dev subdomain"
-echo "  2. Set the GEOTIFF_URL environment variable in your hosting platform:"
-echo "     GEOTIFF_URL=https://<your-subdomain>.r2.dev/$TIF_FILE"
+echo "  2. Set the $ENV_VAR environment variable in your hosting platform:"
+echo "     $ENV_VAR=https://<your-subdomain>.r2.dev/$TIF_FILE"
 echo "  3. Deploy your app (e.g. to Vercel, Fly.io, etc.)"

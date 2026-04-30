@@ -8,13 +8,18 @@ interface Origin {
   type: "city" | "airport";
   country: string;
   computed: boolean;
+  transitNearPct: number | null;
 }
 
 interface OriginComboboxProps {
   origins: Origin[];
   value: string | null;
   onChange: (id: string | null) => void;
+  /** When set, origins under this transit coverage are dimmed and labelled "no transit data". */
+  transitMode?: boolean;
 }
+
+const TRANSIT_OK_PCT = 5;
 
 function IconCity({ className }: { className?: string }) {
   return (
@@ -59,7 +64,7 @@ function XIcon({ className }: { className?: string }) {
   );
 }
 
-export default function OriginCombobox({ origins, value, onChange }: OriginComboboxProps) {
+export default function OriginCombobox({ origins, value, onChange, transitMode }: OriginComboboxProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [highlightIdx, setHighlightIdx] = useState(0);
@@ -160,15 +165,18 @@ export default function OriginCombobox({ origins, value, onChange }: OriginCombo
           const idx = flatIndex(o);
           const isHighlighted = idx === highlightIdx;
           const isSelected = o.id === value;
+          const lowTransit = transitMode && (o.transitNearPct ?? 0) < TRANSIT_OK_PCT;
           return (
             <button
               key={o.id}
               data-idx={idx}
               onMouseEnter={() => setHighlightIdx(idx)}
               onClick={() => handleSelect(o.id)}
+              disabled={lowTransit}
               className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left transition-colors ${
-                isHighlighted ? "bg-blue-50" : ""
-              }`}
+                isHighlighted && !lowTransit ? "bg-blue-50" : ""
+              } ${lowTransit ? "opacity-40 cursor-not-allowed" : ""}`}
+              title={lowTransit ? "No transit data — pick driving or fastest mode" : undefined}
             >
               <span className={`w-4 h-4 shrink-0 ${isSelected ? "text-blue-600" : "text-gray-400"}`}>
                 {icon}
@@ -176,6 +184,11 @@ export default function OriginCombobox({ origins, value, onChange }: OriginCombo
               <span className={`flex-1 truncate ${isSelected ? "font-medium text-blue-600" : "text-gray-700"}`}>
                 {o.name}
               </span>
+              {lowTransit && (
+                <span className="text-[10px] uppercase tracking-wider text-gray-400 shrink-0">
+                  no transit
+                </span>
+              )}
               <span className="text-xs text-gray-400 shrink-0">{o.country}</span>
               {isSelected && (
                 <svg className="w-4 h-4 text-blue-600 shrink-0" viewBox="0 0 16 16" fill="none">

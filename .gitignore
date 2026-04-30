@@ -40,3 +40,6 @@ next-env.d.ts
 
 # data
 data/
+
+# local R5 validation harness (large OSM/GTFS inputs, not part of the app)
+r5-validation/

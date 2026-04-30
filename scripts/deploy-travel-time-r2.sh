@@ -70,28 +70,10 @@ fi
 
 ENDPOINT="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
 
-# Generate manifest.json
+# Generate manifest.json (cellCount + transitNearPct per origin) via Node script
 echo "Generating manifest.json..."
-MANIFEST="["
-FIRST=true
-for f in "${JSON_FILES[@]}"; do
-  BASENAME="$(basename "$f" .json)"
-  # Skip the manifest itself
-  if [ "$BASENAME" = "manifest" ]; then continue; fi
-  # Extract cell count using grep (fast, avoids parsing full JSON)
-  CELL_COUNT=$(grep -co '"lat"' "$f" || true)
-  if [ "$FIRST" = true ]; then
-    FIRST=false
-  else
-    MANIFEST+=","
-  fi
-  MANIFEST+="{\"id\":\"$BASENAME\",\"cellCount\":$CELL_COUNT}"
-done
-MANIFEST+="]"
-
+node "$SCRIPT_DIR/build-manifest.mjs"
 MANIFEST_FILE="$DATA_DIR/manifest.json"
-echo "$MANIFEST" > "$MANIFEST_FILE"
-echo "Manifest: $(echo "$MANIFEST" | grep -o '"id"' | wc -l | tr -d ' ') origins"
 echo ""
 
 # Upload files

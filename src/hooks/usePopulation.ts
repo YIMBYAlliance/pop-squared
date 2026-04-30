@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import type { PopulationResult } from "@/lib/types";
+import type { DataSource, PopulationResult } from "@/lib/types";
 
 interface UsePopulationParams {
   lat: number | null;
   lng: number | null;
   radiusKm: number;
   exponent: number;
+  dataSource?: DataSource;
 }
 
 interface UsePopulationReturn {
@@ -21,6 +22,7 @@ export function usePopulation({
   lng,
   radiusKm,
   exponent,
+  dataSource,
 }: UsePopulationParams): UsePopulationReturn {
   const [result, setResult] = useState<PopulationResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -41,7 +43,7 @@ export function usePopulation({
       const res = await fetch("/api/population", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lat, lng, radiusKm, exponent }),
+        body: JSON.stringify({ lat, lng, radiusKm, exponent, dataSource }),
         signal: controller.signal,
       });
 
@@ -60,7 +62,7 @@ export function usePopulation({
         setLoading(false);
       }
     }
-  }, [lat, lng, radiusKm, exponent]);
+  }, [lat, lng, radiusKm, exponent, dataSource]);
 
   useEffect(() => {
     fetchPopulation();

@@ -21,6 +21,7 @@ interface Origin {
   type: "city" | "airport";
   country: string;
   computed: boolean;
+  transitNearPct: number | null;
 }
 
 interface Results {
@@ -151,6 +152,7 @@ export default function TravelTimeExplorer({
         origins={origins}
         value={selectedOrigin}
         onChange={onOriginChange}
+        transitMode={mode === "transit"}
       />
 
       {/* Mode Selector */}

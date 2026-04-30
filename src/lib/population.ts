@@ -12,9 +12,9 @@ export async function computePopulation(
   query: PopulationQuery
 ): Promise<PopulationResult> {
   const startTime = performance.now();
-  const { lat, lng, radiusKm, exponent } = query;
+  const { lat, lng, radiusKm, exponent, dataSource = "ghs" } = query;
 
-  const image = await getImage();
+  const image = await getImage(dataSource);
   const [originX, originY] = image.getOrigin();
   const [resX, resY] = image.getResolution();
   const width = image.getWidth();
@@ -30,7 +30,7 @@ export async function computePopulation(
   const row1 = Math.min(height - 1, Math.ceil((minLat - originY) / resY));
 
   // Read the window of raster data
-  const data = await readRastersExclusive(image, [col0, row0, col1 + 1, row1 + 1]);
+  const data = await readRastersExclusive(image, [col0, row0, col1 + 1, row1 + 1], dataSource);
   const readWidth = col1 - col0 + 1;
 
   // Generate ring boundaries

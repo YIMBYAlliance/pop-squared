@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { computePopulation } from "@/lib/population";
-import type { PopulationQuery } from "@/lib/types";
+import { isInUk, type DataSource, type PopulationQuery } from "@/lib/types";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { lat, lng, radiusKm, exponent } = body as Partial<PopulationQuery>;
+    const { lat, lng, radiusKm, exponent, dataSource } =
+      body as Partial<PopulationQuery>;
 
     if (typeof lat !== "number" || lat < -90 || lat > 90) {
       return NextResponse.json(
@@ -19,9 +20,9 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    if (typeof radiusKm !== "number" || radiusKm < 1 || radiusKm > 500) {
+    if (typeof radiusKm !== "number" || radiusKm < 2 || radiusKm > 500) {
       return NextResponse.json(
-        { error: "radiusKm must be a number between 1 and 500" },
+        { error: "radiusKm must be a number between 2 and 500" },
         { status: 400 }
       );
     }
@@ -33,7 +34,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await computePopulation({ lat, lng, radiusKm, exponent: exp });
+    let source: DataSource = "ghs";
+    if (dataSource === "uk") {
+      if (!isInUk(lat, lng)) {
+        return NextResponse.json(
+          { error: "UK mode only supports query points inside the UK." },
+          { status: 400 }
+        );
+      }
+      source = "uk";
+    }
+
+    const result = await computePopulation({
+      lat,
+      lng,
+      radiusKm,
+      exponent: exp,
+      dataSource: source,
+    });
     return NextResponse.json(result);
   } catch (error) {
     console.error("Population API error:", error);

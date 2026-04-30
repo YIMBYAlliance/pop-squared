@@ -3,22 +3,9 @@ import fs from "fs/promises";
 import path from "path";
 import { ORIGINS } from "@/lib/origins";
 import type { OriginResult } from "@/lib/travel-time-types";
+import type { MigrateOriginStats } from "@/lib/migrate-types";
 
 const RESULTS_DIR = path.join(process.cwd(), "data", "travel-time");
-
-export interface MigrateOriginStats {
-  id: string;
-  name: string;
-  country: string;
-  type: "city" | "airport";
-  hasFile: boolean;
-  totalCells: number | null;
-  drivingReachable: number | null;
-  transitReachable: number | null;
-  drivingPct: number | null;
-  transitPct: number | null;
-  computedAt: string | null;
-}
 
 export async function GET() {
   if (process.env.NEXT_PUBLIC_DEV_MODE !== "true") {

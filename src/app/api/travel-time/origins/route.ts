@@ -8,9 +8,16 @@ const RESULTS_DIR = path.join(process.cwd(), "data", "travel-time");
 interface ManifestEntry {
   id: string;
   cellCount: number;
+  transitNearPct?: number;
+}
+
+interface ManifestData {
+  cellCount: number | null;
+  transitNearPct: number | null;
 }
 
 let cachedRemoteManifest: ManifestEntry[] | null = null;
+let cachedLocalManifest: ManifestEntry[] | null = null;
 
 async function getRemoteManifest(): Promise<ManifestEntry[]> {
   if (cachedRemoteManifest) return cachedRemoteManifest;
@@ -28,39 +35,66 @@ async function getRemoteManifest(): Promise<ManifestEntry[]> {
   return [];
 }
 
+async function getLocalManifest(): Promise<ManifestEntry[]> {
+  if (cachedLocalManifest) return cachedLocalManifest;
+  try {
+    const raw = await fs.readFile(path.join(RESULTS_DIR, "manifest.json"), "utf-8");
+    cachedLocalManifest = JSON.parse(raw);
+    return cachedLocalManifest!;
+  } catch {
+    return [];
+  }
+}
+
 export async function GET() {
-  const remoteManifest = await getRemoteManifest();
-  const remoteMap = new Map(remoteManifest.map((e) => [e.id, e.cellCount]));
+  const [remoteManifest, localManifest] = await Promise.all([
+    getRemoteManifest(),
+    getLocalManifest(),
+  ]);
+
+  const lookup = (m: ManifestEntry[]): Map<string, ManifestData> =>
+    new Map(
+      m.map((e) => [
+        e.id,
+        {
+          cellCount: e.cellCount ?? null,
+          transitNearPct: e.transitNearPct ?? null,
+        },
+      ])
+    );
+
+  const localMap = lookup(localManifest);
+  const remoteMap = lookup(remoteManifest);
 
   const origins = await Promise.all(
     ORIGINS.map(async (origin) => {
-      // Check local file first
       const filePath = path.join(RESULTS_DIR, `${origin.id}.json`);
       let computed = false;
-      let cellCount: number | null = null;
+      let stats: ManifestData | undefined;
+
       try {
         await fs.access(filePath);
         computed = true;
-        // Don't parse full JSON just for cell count — use manifest if available,
-        // otherwise leave as null (cell count is informational only)
-        cellCount = remoteMap.get(origin.id) ?? null;
+        stats = localMap.get(origin.id) ?? remoteMap.get(origin.id);
       } catch {
-        // Local file not found — check remote manifest
         if (remoteMap.has(origin.id)) {
           computed = true;
-          cellCount = remoteMap.get(origin.id) ?? null;
+          stats = remoteMap.get(origin.id);
         }
       }
+
       return {
         ...origin,
         computed,
-        cellCount,
+        cellCount: stats?.cellCount ?? null,
+        transitNearPct: stats?.transitNearPct ?? null,
       };
     })
   );
 
-  const total = origins.length;
-  const completed = origins.filter((o) => o.computed).length;
-
-  return NextResponse.json({ origins, total, completed });
+  return NextResponse.json({
+    origins,
+    total: origins.length,
+    completed: origins.filter((o) => o.computed).length,
+  });
 }

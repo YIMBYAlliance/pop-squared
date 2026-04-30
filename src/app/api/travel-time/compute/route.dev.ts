@@ -35,19 +35,29 @@ function getCredentials() {
   return { apiKey, applicationId: appId };
 }
 
+// TravelTime per-minute quota is shared across H3 + Proto endpoints, so split
+// the budget rather than letting each client think it has the whole quota.
+// Both retry on 429 with a meaningful backoff so concurrent workers cooperate.
+const RATE_LIMIT = {
+  enabled: true,
+  hitsPerMinute: 30,
+  retryCount: 5,
+  timeBetweenRetries: 3000,
+} as const;
+
+// Module-scoped singletons so the rate-limit budget persists across requests.
+// (A fresh client per request would reset its quota tracker every time.)
+let _client: TravelTimeClient | null = null;
+let _protoClient: TravelTimeProtoClient | null = null;
+
 function getClient(): TravelTimeClient {
-  return new TravelTimeClient(getCredentials());
+  if (!_client) _client = new TravelTimeClient(getCredentials(), { rateLimitSettings: RATE_LIMIT });
+  return _client;
 }
 
 function getProtoClient(): TravelTimeProtoClient {
-  return new TravelTimeProtoClient(getCredentials(), {
-    rateLimitSettings: {
-      enabled: true,
-      hitsPerMinute: 60,
-      retryCount: 3,
-      timeBetweenRetries: 2000,
-    },
-  });
+  if (!_protoClient) _protoClient = new TravelTimeProtoClient(getCredentials(), { rateLimitSettings: RATE_LIMIT });
+  return _protoClient;
 }
 
 /** Pick the faster (lower) non-null value */

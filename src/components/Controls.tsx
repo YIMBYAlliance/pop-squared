@@ -25,6 +25,10 @@ interface ControlsProps {
   onExponentChange: (exponent: number) => void;
   colorBy: ColorBy;
   onColorByChange: (colorBy: ColorBy) => void;
+  ukMode: boolean;
+  onUkModeChange: (v: boolean) => void;
+  /** True when at least one query point is inside the UK bbox. */
+  ukAvailable: boolean;
   /** When true, only render the colour-by toggle */
   colorByOnly?: boolean;
 }
@@ -36,6 +40,9 @@ export default function Controls({
   onExponentChange,
   colorBy,
   onColorByChange,
+  ukMode,
+  onUkModeChange,
+  ukAvailable,
   colorByOnly,
 }: ControlsProps) {
   const [maxKm, setMaxKm] = useState(DEFAULT_MAX);
@@ -77,8 +84,46 @@ export default function Controls({
     </div>
   );
 
+  const ukToggle = (
+    <div className="flex items-center justify-between">
+      <Tooltip text={
+        ukAvailable
+          ? "Use the higher-resolution ONS-derived raster instead of the global GHS-POP. Falls back to GHS for points outside the UK."
+          : "UK mode is only available when the query point is inside the UK."
+      }>
+        <span className={`text-sm font-medium cursor-help border-b border-dashed ${
+          ukAvailable ? "text-gray-700 border-gray-300" : "text-gray-400 border-gray-200"
+        }`}>
+          UK mode (ONS) <span className="text-xs font-normal text-amber-600">beta</span>
+        </span>
+      </Tooltip>
+      <button
+        onClick={() => onUkModeChange(!ukMode)}
+        disabled={!ukAvailable}
+        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+          !ukAvailable
+            ? "bg-gray-200 cursor-not-allowed"
+            : ukMode
+              ? "bg-blue-600"
+              : "bg-gray-300"
+        }`}
+      >
+        <span
+          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+            ukMode && ukAvailable ? "translate-x-6" : "translate-x-1"
+          }`}
+        />
+      </button>
+    </div>
+  );
+
   if (colorByOnly) {
-    return colorByToggle;
+    return (
+      <div className="space-y-4">
+        {colorByToggle}
+        {ukToggle}
+      </div>
+    );
   }
 
   return (
@@ -97,7 +142,7 @@ export default function Controls({
         </div>
         <input
           type="range"
-          min={3}
+          min={2}
           max={maxKm}
           step={1}
           value={radiusKm}
@@ -105,7 +150,7 @@ export default function Controls({
           className="w-full accent-blue-600"
         />
         <div className="flex justify-between text-xs text-gray-400">
-          <span>3 km</span>
+          <span>2 km</span>
           <span>{maxKm} km</span>
         </div>
       </div>
@@ -132,6 +177,7 @@ export default function Controls({
       </div>
 
       {colorByToggle}
+      {ukToggle}
     </div>
   );
 }

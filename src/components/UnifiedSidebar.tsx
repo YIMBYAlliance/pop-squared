@@ -21,6 +21,7 @@ interface OriginInfo {
   type: "city" | "airport";
   country: string;
   computed: boolean;
+  transitNearPct: number | null;
 }
 
 interface TravelTimeResults {
@@ -54,6 +55,10 @@ interface UnifiedSidebarProps {
   onExponentDistChange: (e: number) => void;
   colorBy: ColorBy;
   onColorByChange: (c: ColorBy) => void;
+  ukMode: boolean;
+  onUkModeChange: (v: boolean) => void;
+  ukAvailableA: boolean;
+  ukAvailableB: boolean;
   distResultA: PopulationResult | null;
   distResultB: PopulationResult | null;
   distLoadingA: boolean;
@@ -247,17 +252,58 @@ export default function UnifiedSidebar(props: UnifiedSidebarProps) {
             Tom Forth&apos;s Circle Populations
           </a>
         </p>
-        <p>Data: GHSL GHS-POP R2023A (JRC)</p>
         <p>
-          Location data analysis provided by{" "}
+          Population:{" "}
+          <a
+            href="https://human-settlement.emergency.copernicus.eu/ghs_pop2023.php"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:text-gray-600"
+          >
+            GHSL GHS-POP R2023A
+          </a>
+          {" "}(JRC, CC&nbsp;BY&nbsp;4.0)
+        </p>
+        <p>
+          Travel times:{" "}
           <a
             href="https://docs.traveltime.com/api/overview/introduction"
             target="_blank"
             rel="noopener noreferrer"
             className="underline hover:text-gray-600"
           >
-            TravelTime
+            TravelTime API
           </a>
+          ; validated against{" "}
+          <a
+            href="https://github.com/conveyal/r5"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:text-gray-600"
+          >
+            Conveyal R5
+          </a>
+        </p>
+        <p>
+          Maps:{" "}
+          <a
+            href="https://www.mapbox.com/about/maps/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:text-gray-600"
+          >
+            Mapbox
+          </a>
+          {" "}&middot;{" "}
+          <a
+            href="https://www.openstreetmap.org/copyright"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:text-gray-600"
+          >
+            OpenStreetMap
+          </a>
+          {" "}contributors
         </p>
       </div>
     </div>
@@ -278,6 +324,9 @@ function SingleContent(props: UnifiedSidebarProps & { isDistance: boolean }) {
             onExponentChange={props.onExponentDistChange}
             colorBy={props.colorBy}
             onColorByChange={props.onColorByChange}
+            ukMode={props.ukMode}
+            onUkModeChange={props.onUkModeChange}
+            ukAvailable={props.ukAvailableA}
           />
         </div>
         <div className="p-5 border-b border-gray-100">
@@ -465,6 +514,9 @@ function CompareContent(props: UnifiedSidebarProps & { isDistance: boolean }) {
               onExponentChange={props.onExponentDistChange}
               colorBy={props.colorBy}
               onColorByChange={props.onColorByChange}
+              ukMode={props.ukMode}
+              onUkModeChange={props.onUkModeChange}
+              ukAvailable={props.ukAvailableA || props.ukAvailableB}
               colorByOnly
             />
           </div>

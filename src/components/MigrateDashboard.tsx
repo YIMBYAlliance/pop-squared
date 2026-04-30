@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import type { MigrateOriginStats } from "@/app/api/travel-time/migrate/route";
+import type { MigrateOriginStats } from "@/lib/migrate-types";
 
 type Action = "skip" | "recompute";
 
@@ -91,7 +91,7 @@ export default function MigrateDashboard() {
   const [threshold, setThreshold] = useState(30);
   const [mergeEnabled, setMergeEnabled] = useState(true);
   const [dualEnabled, setDualEnabled] = useState(true);
-  const [workerCount, setWorkerCount] = useState(3);
+  const [workerCount, setWorkerCount] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);

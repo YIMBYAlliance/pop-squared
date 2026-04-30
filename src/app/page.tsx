@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import mapboxgl from "mapbox-gl";
 import UnifiedSidebar from "@/components/UnifiedSidebar";
+import TransitFirstUseModal from "@/components/TransitFirstUseModal";
+import DataQualityFirstUseModal from "@/components/DataQualityFirstUseModal";
 import type { CompareMode } from "@/components/compare/ModePicker";
 import { usePopulation } from "@/hooks/usePopulation";
 import { useTravelTimeData } from "@/hooks/useTravelTimeData";
@@ -10,6 +12,7 @@ import { buildSuperCells } from "@/lib/supercells";
 import { createRings, createCircle, createWedges } from "@/lib/circle-geojson";
 import type { ColorBy } from "@/lib/circle-geojson";
 import type { TransportMode } from "@/lib/travel-time-types";
+import { isInUk, type DataSource } from "@/lib/types";
 
 interface OriginInfo {
   id: string;
@@ -19,7 +22,10 @@ interface OriginInfo {
   type: "city" | "airport";
   country: string;
   computed: boolean;
+  transitNearPct: number | null;
 }
+
+const TRANSIT_OK_PCT = 5;
 
 const EMPTY_FC: GeoJSON.FeatureCollection = {
   type: "FeatureCollection",
@@ -40,6 +46,7 @@ export default function Home() {
   const [radiusKm, setRadiusKm] = useState(10);
   const [exponentDist, setExponentDist] = useState(2);
   const [colorBy, setColorBy] = useState<ColorBy>("inverse-square");
+  const [ukMode, setUkMode] = useState(false);
 
   // -- Time state --
   const [originA, setOriginA] = useState<string | null>(null);
@@ -51,18 +58,27 @@ export default function Home() {
   const [origins, setOrigins] = useState<OriginInfo[]>([]);
   const [originsError, setOriginsError] = useState<string | null>(null);
 
+  // UK mode is only meaningful when the query point is inside the UK bbox.
+  // Otherwise we fall back to GHS so the user gets a result rather than an error.
+  const sourceA: DataSource =
+    ukMode && latA !== null && lngA !== null && isInUk(latA, lngA) ? "uk" : "ghs";
+  const sourceB: DataSource =
+    ukMode && latB !== null && lngB !== null && isInUk(latB, lngB) ? "uk" : "ghs";
+
   // -- Hooks: Distance --
   const distA = usePopulation({
     lat: mode === "distance" ? latA : null,
     lng: mode === "distance" ? lngA : null,
     radiusKm,
     exponent: exponentDist,
+    dataSource: sourceA,
   });
   const distB = usePopulation({
     lat: mode === "distance" && compare ? latB : null,
     lng: mode === "distance" && compare ? lngB : null,
     radiusKm,
     exponent: exponentDist,
+    dataSource: sourceB,
   });
 
   // -- Hooks: Time --
@@ -594,9 +610,17 @@ export default function Home() {
     if (src) src.setData(cellsBGeo);
   }, [cellsBGeo, mapReady]);
 
-  // -- Time: origins overlay (filter out selected origins) --
+  // -- Time: origins overlay (filter out selected origins, hide low-transit in transit mode) --
   const originsGeoJson = useMemo((): GeoJSON.FeatureCollection => {
-    const computed = origins.filter((o) => o.computed);
+    const computed = origins.filter((o) => {
+      if (!o.computed) return false;
+      // In transit-only mode, hide origins where transit data is too sparse.
+      // Fastest mode keeps them — driving fallback still produces meaningful results.
+      if (transportMode === "transit") {
+        return (o.transitNearPct ?? 0) >= TRANSIT_OK_PCT;
+      }
+      return true;
+    });
     if (computed.length === 0) return EMPTY_FC;
     return {
       type: "FeatureCollection",
@@ -606,7 +630,7 @@ export default function Home() {
         geometry: { type: "Point" as const, coordinates: [o.lng, o.lat] },
       })),
     };
-  }, [origins]);
+  }, [origins, transportMode]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -776,6 +800,11 @@ export default function Home() {
 
   return (
     <div className="h-full flex flex-col md:flex-row">
+      <DataQualityFirstUseModal />
+      <TransitFirstUseModal
+        active={mode === "time" && (transportMode === "transit" || transportMode === "fastest")}
+      />
+
       {/* Map */}
       <div className="flex-1 relative">
         <div ref={containerRef} className="w-full h-full" />
@@ -800,6 +829,10 @@ export default function Home() {
           onExponentDistChange={setExponentDist}
           colorBy={colorBy}
           onColorByChange={setColorBy}
+          ukMode={ukMode}
+          onUkModeChange={setUkMode}
+          ukAvailableA={latA !== null && lngA !== null && isInUk(latA, lngA)}
+          ukAvailableB={latB !== null && lngB !== null && isInUk(latB, lngB)}
           distResultA={distA.result}
           distResultB={distB.result}
           distLoadingA={distA.loading}

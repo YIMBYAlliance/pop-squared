@@ -13,6 +13,7 @@ interface OriginInfo {
   type: "city" | "airport";
   country: string;
   computed: boolean;
+  transitNearPct: number | null;
 }
 
 interface TimeControlsProps {
@@ -95,7 +96,12 @@ export default function TimeControls({
       <div className="flex items-start gap-2">
         <span className="mt-7 w-3 h-3 rounded-full bg-blue-600 shrink-0" />
         <div className="flex-1">
-          <OriginCombobox origins={origins} value={originA} onChange={onOriginAChange} />
+          <OriginCombobox
+            origins={origins}
+            value={originA}
+            onChange={onOriginAChange}
+            transitMode={transportMode === "transit"}
+          />
         </div>
       </div>
 
@@ -103,7 +109,12 @@ export default function TimeControls({
       <div className="flex items-start gap-2">
         <span className="mt-7 w-3 h-3 rounded-full bg-orange-600 shrink-0" />
         <div className="flex-1">
-          <OriginCombobox origins={origins} value={originB} onChange={onOriginBChange} />
+          <OriginCombobox
+            origins={origins}
+            value={originB}
+            onChange={onOriginBChange}
+            transitMode={transportMode === "transit"}
+          />
         </div>
       </div>
 

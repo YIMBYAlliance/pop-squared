@@ -82,7 +82,7 @@ export default function DistanceControls({
         </label>
         <input
           type="range"
-          min={1}
+          min={2}
           max={100}
           step={1}
           value={radiusKm}
@@ -90,7 +90,7 @@ export default function DistanceControls({
           className="w-full accent-blue-600"
         />
         <div className="flex justify-between text-xs text-gray-400">
-          <span>1 km</span>
+          <span>2 km</span>
           <span>100 km</span>
         </div>
       </div>

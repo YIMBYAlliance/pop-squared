@@ -1,0 +1,5 @@
+data/
+r5-validation/
+.next/
+node_modules/
+*.log
