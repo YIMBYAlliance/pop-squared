@@ -209,7 +209,31 @@ export default function UnifiedSidebar(props: UnifiedSidebarProps) {
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="p-5 border-b border-gray-100">
-        <h1 className="text-lg font-bold text-gray-900">Pop Squared</h1>
+        <div className="flex items-baseline justify-between gap-3">
+          <h1 className="text-lg font-bold text-gray-900">Pop Squared</h1>
+          <div className="flex items-center gap-2 text-xs text-gray-500">
+            <button
+              onClick={props.onOpenMethodology}
+              className="underline hover:text-gray-800"
+            >
+              Methodology
+            </button>
+            <span className="text-gray-300">·</span>
+            <button
+              onClick={props.onOpenDataQuality}
+              className="underline hover:text-gray-800"
+            >
+              Population
+            </button>
+            <span className="text-gray-300">·</span>
+            <button
+              onClick={props.onOpenTransit}
+              className="underline hover:text-gray-800"
+            >
+              Travel-time
+            </button>
+          </div>
+        </div>
         <p className="text-xs text-gray-500 mt-0.5">
           Population weighted by proximity
         </p>
@@ -246,29 +270,6 @@ export default function UnifiedSidebar(props: UnifiedSidebarProps) {
 
       {/* Footer */}
       <div className="mt-auto p-4 text-xs text-gray-400 border-t border-gray-100 space-y-1">
-        <p className="text-gray-600">
-          About:{" "}
-          <button
-            onClick={props.onOpenMethodology}
-            className="underline hover:text-gray-800"
-          >
-            Methodology
-          </button>
-          {" · "}
-          <button
-            onClick={props.onOpenDataQuality}
-            className="underline hover:text-gray-800"
-          >
-            Population data
-          </button>
-          {" · "}
-          <button
-            onClick={props.onOpenTransit}
-            className="underline hover:text-gray-800"
-          >
-            Travel-time data
-          </button>
-        </p>
         <p>
           Inspired by{" "}
           <a
