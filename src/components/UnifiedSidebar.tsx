@@ -87,6 +87,11 @@ interface UnifiedSidebarProps {
   timeErrorA: string | null;
   timeErrorB: string | null;
   originsError: string | null;
+
+  // Modal triggers from the footer
+  onOpenMethodology: () => void;
+  onOpenDataQuality: () => void;
+  onOpenTransit: () => void;
 }
 
 // --- Helper builders (reused from CompareSidebar logic) ---
@@ -241,6 +246,29 @@ export default function UnifiedSidebar(props: UnifiedSidebarProps) {
 
       {/* Footer */}
       <div className="mt-auto p-4 text-xs text-gray-400 border-t border-gray-100 space-y-1">
+        <p className="text-gray-600">
+          About:{" "}
+          <button
+            onClick={props.onOpenMethodology}
+            className="underline hover:text-gray-800"
+          >
+            Methodology
+          </button>
+          {" · "}
+          <button
+            onClick={props.onOpenDataQuality}
+            className="underline hover:text-gray-800"
+          >
+            Population data
+          </button>
+          {" · "}
+          <button
+            onClick={props.onOpenTransit}
+            className="underline hover:text-gray-800"
+          >
+            Travel-time data
+          </button>
+        </p>
         <p>
           Inspired by{" "}
           <a

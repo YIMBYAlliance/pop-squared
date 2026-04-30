@@ -5,6 +5,7 @@ import mapboxgl from "mapbox-gl";
 import UnifiedSidebar from "@/components/UnifiedSidebar";
 import TransitFirstUseModal from "@/components/TransitFirstUseModal";
 import DataQualityFirstUseModal from "@/components/DataQualityFirstUseModal";
+import MethodologyModal from "@/components/MethodologyModal";
 import type { CompareMode } from "@/components/compare/ModePicker";
 import { usePopulation } from "@/hooks/usePopulation";
 import { useTravelTimeData } from "@/hooks/useTravelTimeData";
@@ -57,6 +58,11 @@ export default function Home() {
   const [timeColorBy, setTimeColorBy] = useState<"travel-time" | "population" | "weight">("travel-time");
   const [origins, setOrigins] = useState<OriginInfo[]>([]);
   const [originsError, setOriginsError] = useState<string | null>(null);
+
+  // -- Modal reopen state (footer links) --
+  const [methodologyOpen, setMethodologyOpen] = useState(false);
+  const [dataQualityOpen, setDataQualityOpen] = useState(false);
+  const [transitOpen, setTransitOpen] = useState(false);
 
   // UK mode is only meaningful when the query point is inside the UK bbox.
   // Otherwise we fall back to GHS so the user gets a result rather than an error.
@@ -800,9 +806,18 @@ export default function Home() {
 
   return (
     <div className="h-full flex flex-col md:flex-row">
-      <DataQualityFirstUseModal />
+      <DataQualityFirstUseModal
+        externalOpen={dataQualityOpen}
+        onExternalClose={() => setDataQualityOpen(false)}
+      />
       <TransitFirstUseModal
         active={mode === "time" && (transportMode === "transit" || transportMode === "fastest")}
+        externalOpen={transitOpen}
+        onExternalClose={() => setTransitOpen(false)}
+      />
+      <MethodologyModal
+        open={methodologyOpen}
+        onClose={() => setMethodologyOpen(false)}
       />
 
       {/* Map */}
@@ -859,6 +874,9 @@ export default function Home() {
           timeErrorA={timeA.error}
           timeErrorB={timeB.error}
           originsError={originsError}
+          onOpenMethodology={() => setMethodologyOpen(true)}
+          onOpenDataQuality={() => setDataQualityOpen(true)}
+          onOpenTransit={() => setTransitOpen(true)}
         />
       </div>
     </div>

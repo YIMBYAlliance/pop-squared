@@ -13,20 +13,33 @@ import {
 
 const STORAGE_KEY = "pop-squared:data-quality-modal-seen";
 
-export default function DataQualityFirstUseModal() {
-  const [open, setOpen] = useState(false);
+interface Props {
+  /** Force the modal open from outside (e.g. footer link). */
+  externalOpen?: boolean;
+  /** Called when the user dismisses while externally opened. */
+  onExternalClose?: () => void;
+}
+
+export default function DataQualityFirstUseModal({
+  externalOpen,
+  onExternalClose,
+}: Props = {}) {
+  const [internalOpen, setInternalOpen] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (window.localStorage.getItem(STORAGE_KEY) === "1") return;
-    setOpen(true);
+    setInternalOpen(true);
   }, []);
+
+  const open = externalOpen || internalOpen;
 
   function handleClose() {
     if (typeof window !== "undefined") {
       window.localStorage.setItem(STORAGE_KEY, "1");
     }
-    setOpen(false);
+    setInternalOpen(false);
+    onExternalClose?.();
   }
 
   return (
