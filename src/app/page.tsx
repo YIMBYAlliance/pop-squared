@@ -59,11 +59,6 @@ export default function Home() {
   const [origins, setOrigins] = useState<OriginInfo[]>([]);
   const [originsError, setOriginsError] = useState<string | null>(null);
 
-  // -- Modal reopen state (footer links) --
-  const [methodologyOpen, setMethodologyOpen] = useState(false);
-  const [dataQualityOpen, setDataQualityOpen] = useState(false);
-  const [transitOpen, setTransitOpen] = useState(false);
-
   // UK mode is only meaningful when the query point is inside the UK bbox.
   // Otherwise we fall back to GHS so the user gets a result rather than an error.
   const sourceA: DataSource =
@@ -806,19 +801,11 @@ export default function Home() {
 
   return (
     <div className="h-full flex flex-col md:flex-row">
-      <DataQualityFirstUseModal
-        externalOpen={dataQualityOpen}
-        onExternalClose={() => setDataQualityOpen(false)}
-      />
+      <DataQualityFirstUseModal />
       <TransitFirstUseModal
         active={mode === "time" && (transportMode === "transit" || transportMode === "fastest")}
-        externalOpen={transitOpen}
-        onExternalClose={() => setTransitOpen(false)}
       />
-      <MethodologyModal
-        open={methodologyOpen}
-        onClose={() => setMethodologyOpen(false)}
-      />
+      <MethodologyModal />
 
       {/* Map */}
       <div className="flex-1 relative">
@@ -874,9 +861,6 @@ export default function Home() {
           timeErrorA={timeA.error}
           timeErrorB={timeB.error}
           originsError={originsError}
-          onOpenMethodology={() => setMethodologyOpen(true)}
-          onOpenDataQuality={() => setDataQualityOpen(true)}
-          onOpenTransit={() => setTransitOpen(true)}
         />
       </div>
     </div>

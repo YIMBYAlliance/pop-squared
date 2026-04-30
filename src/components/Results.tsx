@@ -68,7 +68,7 @@ export default function Results({ result, loading, error, exponent }: ResultsPro
         <div>
           <Tooltip text="Weights population by proximity: each person contributes pop/r^n. Higher = more people live close by.">
             <p className="text-xs uppercase tracking-wide text-blue-600 font-medium cursor-help border-b border-dashed border-blue-300">
-              Inverse-Distance Gravity (1/r<sup>{formatExp(exponent)}</sup>)
+              Inverse-Distance Gravity (pop/r<sup>{formatExp(exponent)}</sup>)
             </p>
           </Tooltip>
           <p className="text-xs text-blue-400 mt-1">

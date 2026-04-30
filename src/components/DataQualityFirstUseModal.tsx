@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,36 +10,26 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useOpenModalEvent } from "@/lib/modal-events";
 
 const STORAGE_KEY = "pop-squared:data-quality-modal-seen";
 
-interface Props {
-  /** Force the modal open from outside (e.g. footer link). */
-  externalOpen?: boolean;
-  /** Called when the user dismisses while externally opened. */
-  onExternalClose?: () => void;
-}
-
-export default function DataQualityFirstUseModal({
-  externalOpen,
-  onExternalClose,
-}: Props = {}) {
-  const [internalOpen, setInternalOpen] = useState(false);
+export default function DataQualityFirstUseModal() {
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (window.localStorage.getItem(STORAGE_KEY) === "1") return;
-    setInternalOpen(true);
+    setOpen(true);
   }, []);
 
-  const open = externalOpen || internalOpen;
+  useOpenModalEvent("data-quality", useCallback(() => setOpen(true), []));
 
   function handleClose() {
     if (typeof window !== "undefined") {
       window.localStorage.setItem(STORAGE_KEY, "1");
     }
-    setInternalOpen(false);
-    onExternalClose?.();
+    setOpen(false);
   }
 
   return (

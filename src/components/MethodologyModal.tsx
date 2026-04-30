@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback, useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -9,15 +10,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useOpenModalEvent } from "@/lib/modal-events";
 
-interface Props {
-  open: boolean;
-  onClose: () => void;
-}
+export default function MethodologyModal() {
+  const [open, setOpen] = useState(false);
+  useOpenModalEvent("methodology", useCallback(() => setOpen(true), []));
 
-export default function MethodologyModal({ open, onClose }: Props) {
   return (
-    <AlertDialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+    <AlertDialog open={open} onOpenChange={(o) => { if (!o) setOpen(false); }}>
       <AlertDialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <AlertDialogHeader>
           <AlertDialogTitle>Methodology &amp; data caveats</AlertDialogTitle>
@@ -180,7 +180,7 @@ export default function MethodologyModal({ open, onClose }: Props) {
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogAction onClick={onClose}>Close</AlertDialogAction>
+          <AlertDialogAction onClick={() => setOpen(false)}>Close</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

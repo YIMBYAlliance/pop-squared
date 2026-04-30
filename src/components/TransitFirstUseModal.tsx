@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,40 +10,27 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useOpenModalEvent } from "@/lib/modal-events";
 
 const STORAGE_KEY = "pop-squared:transit-modal-seen";
 
-interface Props {
-  /** First-use trigger: open the first time the user enters transit mode. */
-  active: boolean;
-  /** Force the modal open from outside (e.g. footer link). */
-  externalOpen?: boolean;
-  /** Called when the user dismisses while externally opened. */
-  onExternalClose?: () => void;
-}
-
-export default function TransitFirstUseModal({
-  active,
-  externalOpen,
-  onExternalClose,
-}: Props) {
-  const [internalOpen, setInternalOpen] = useState(false);
+export default function TransitFirstUseModal({ active }: { active: boolean }) {
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     if (!active) return;
     if (typeof window === "undefined") return;
     if (window.localStorage.getItem(STORAGE_KEY) === "1") return;
-    setInternalOpen(true);
+    setOpen(true);
   }, [active]);
 
-  const open = externalOpen || internalOpen;
+  useOpenModalEvent("transit", useCallback(() => setOpen(true), []));
 
   function handleClose() {
     if (typeof window !== "undefined") {
       window.localStorage.setItem(STORAGE_KEY, "1");
     }
-    setInternalOpen(false);
-    onExternalClose?.();
+    setOpen(false);
   }
 
   return (

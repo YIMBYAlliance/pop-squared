@@ -211,7 +211,7 @@ export default function TravelTimeExplorer({
           {([
             { value: "travel-time" as const, label: "Time" },
             { value: "population" as const, label: "Population" },
-            { value: "weight" as const, label: `1/t${formatExp(exponent)}` },
+            { value: "weight" as const, label: `pop/t${formatExp(exponent)}` },
           ]).map((opt) => (
             <button
               key={opt.value}
@@ -320,7 +320,7 @@ export default function TravelTimeExplorer({
           <div className="rounded-lg bg-blue-50 border border-blue-200 p-3 space-y-3">
             <Tooltip text="Weights population by travel time: each person contributes pop/t^n.">
               <p className="text-xs uppercase tracking-wide text-blue-600 font-medium cursor-help border-b border-dashed border-blue-300">
-                Travel-Time Gravity (1/t<sup>{formatExp(exponent)}</sup>)
+                Travel-Time Gravity (pop/t<sup>{formatExp(exponent)}</sup>)
               </p>
             </Tooltip>
             <div className="grid grid-cols-2 gap-3">
@@ -380,7 +380,7 @@ export default function TravelTimeExplorer({
                     <th className="py-1.5 pr-2 text-right">Population</th>
                     <th className="py-1.5 pr-2 text-right">Cells</th>
                     <th className="py-1.5 text-right">
-                      1/t<sup>{formatExp(exponent)}</sup>
+                      pop/t<sup>{formatExp(exponent)}</sup>
                     </th>
                   </tr>
                 </thead>

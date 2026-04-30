@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { openModal } from "@/lib/modal-events";
 
 const isDev = process.env.NEXT_PUBLIC_DEV_MODE === "true";
 
@@ -18,6 +19,26 @@ export default function NavBar() {
           Admin
         </Link>
       )}
+      <div className="ml-auto flex items-center gap-4 text-sm">
+        <button
+          onClick={() => openModal("methodology")}
+          className="text-gray-600 hover:text-gray-900 underline-offset-2 hover:underline transition-colors"
+        >
+          Methodology
+        </button>
+        <button
+          onClick={() => openModal("data-quality")}
+          className="text-gray-600 hover:text-gray-900 underline-offset-2 hover:underline transition-colors"
+        >
+          Population data
+        </button>
+        <button
+          onClick={() => openModal("transit")}
+          className="text-gray-600 hover:text-gray-900 underline-offset-2 hover:underline transition-colors"
+        >
+          Travel-time data
+        </button>
+      </div>
     </nav>
   );
 }

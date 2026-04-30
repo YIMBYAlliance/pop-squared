@@ -57,7 +57,7 @@ export default function RingTable({ rings, exponent }: RingTableProps) {
               <th className="py-1.5 pr-2 text-right">Population</th>
               <th className="py-1.5 pr-2 text-right">Area (km&sup2;)</th>
               <th className="py-1.5 pr-2 text-right">Density</th>
-              <th className="py-1.5 text-right">1/r<sup>{exponent === Math.round(exponent) ? exponent : exponent.toFixed(1)}</sup></th>
+              <th className="py-1.5 text-right">pop/r<sup>{exponent === Math.round(exponent) ? exponent : exponent.toFixed(1)}</sup></th>
             </tr>
           </thead>
           <tbody>

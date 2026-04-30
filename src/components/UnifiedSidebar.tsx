@@ -87,11 +87,6 @@ interface UnifiedSidebarProps {
   timeErrorA: string | null;
   timeErrorB: string | null;
   originsError: string | null;
-
-  // Modal triggers from the footer
-  onOpenMethodology: () => void;
-  onOpenDataQuality: () => void;
-  onOpenTransit: () => void;
 }
 
 // --- Helper builders (reused from CompareSidebar logic) ---
@@ -209,31 +204,7 @@ export default function UnifiedSidebar(props: UnifiedSidebarProps) {
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="p-5 border-b border-gray-100">
-        <div className="flex items-baseline justify-between gap-3">
-          <h1 className="text-lg font-bold text-gray-900">Pop Squared</h1>
-          <div className="flex items-center gap-2 text-xs text-gray-500">
-            <button
-              onClick={props.onOpenMethodology}
-              className="underline hover:text-gray-800"
-            >
-              Methodology
-            </button>
-            <span className="text-gray-300">·</span>
-            <button
-              onClick={props.onOpenDataQuality}
-              className="underline hover:text-gray-800"
-            >
-              Population
-            </button>
-            <span className="text-gray-300">·</span>
-            <button
-              onClick={props.onOpenTransit}
-              className="underline hover:text-gray-800"
-            >
-              Travel-time
-            </button>
-          </div>
-        </div>
+        <h1 className="text-lg font-bold text-gray-900">Pop Squared</h1>
         <p className="text-xs text-gray-500 mt-0.5">
           Population weighted by proximity
         </p>
@@ -617,7 +588,7 @@ function CompareContent(props: UnifiedSidebarProps & { isDistance: boolean }) {
           <h3 className="text-sm font-medium text-gray-700 mb-2">Breakdown</h3>
           <BreakdownTable
             bands={bandRows}
-            weightHeader={props.isDistance ? "1/r\u207F" : "1/t\u207F"}
+            weightHeader={props.isDistance ? "pop/r\u207F" : "pop/t\u207F"}
           />
         </div>
       )}

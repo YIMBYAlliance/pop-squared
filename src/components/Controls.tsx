@@ -66,7 +66,7 @@ export default function Controls({
         {([
           { value: "population" as const, label: "Population" },
           { value: "density" as const, label: "Density" },
-          { value: "inverse-square" as const, label: `1/r${superscript(exponent)}` },
+          { value: "inverse-square" as const, label: `pop/r${superscript(exponent)}` },
         ]).map((opt) => (
           <button
             key={opt.value}
