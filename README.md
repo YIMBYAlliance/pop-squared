@@ -1,118 +1,128 @@
 # Pop Squared
 
-Circle population calculator with inverse-square weighting. Click anywhere on a map to see how many people live within a given radius, plus a gravity-style 1/r² metric that weights nearby population more heavily.
+A YIMBY Alliance internal tool for asking *"how many people live within X kilometres of a point?"* — and a richer follow-up question, *"how does that distribution look once you weight nearby people more heavily than distant ones?"* (the inverse-square / gravity metric). It also overlays public-transport accessibility for UK locations using precomputed isochrones from the TravelTime API.
 
-Uses [GHSL GHS-POP R2023A](https://human-settlement.emergency.copernicus.eu/) (epoch 2025) at ~1km resolution, read directly from a local GeoTIFF file.
+**Vercel project:** `pop-squared` under the `ya-projects` Vercel team — check the dashboard for the live URL. **Repo:** https://github.com/YIMBYAlliance/pop-squared. **Stack (one line):** A Next.js website hosted on Vercel, reading population rasters and transit data from YA's Cloudflare R2 bucket.
 
-## Quick Start
+## What this project does
+
+You drop a pin on the map and the app tells you:
+
+- **Total population** within the chosen radius (in 1km bands), drawn from a worldwide ~1km raster.
+- **Inverse-square weighted population** — the same numbers but weighted by `1 / r²` so people 1km away count 100× more than people 10km away. Roughly: how "felt" is a place by the population around it.
+- **For UK locations** specifically: a higher-resolution 100m raster derived from ONS census data, plus a public-transport accessibility overlay showing the share of population reachable by public transit within a given travel time.
+- **Compare mode** — two pins side-by-side, useful for benchmarking sites against each other.
+
+The map and analytics live in the browser; the actual raster reading happens server-side because the population data files are big (the world raster is ~461MB).
+
+## Data and accounts
+
+| Thing | Owner | Where | Notes |
+|---|---|---|---|
+| GitHub repo | YIMBY Alliance org | `YIMBYAlliance/pop-squared` | Push to `master` to deploy |
+| Vercel project | YIMBY Alliance team | `ya-projects/pop-squared` | Auto-deploys `master`; PRs get previews |
+| Cloudflare R2 bucket | YIMBY Alliance Cloudflare account | bucket `pop-squared-data` (account `f782162e94b1ce9cd3e12e716233b162`) | Hosts the population GeoTIFF + precomputed travel-time JSON files |
+| GHSL GHS-POP raster | European Commission JRC (open data) | https://human-settlement.emergency.copernicus.eu/ | World population at ~1km |
+| ONS UK 100m raster | Built from ONS Census 2021 | `scripts/build-uk-raster.py` produces it; output uploaded to R2 | Higher-resolution UK overlay |
+| TravelTime API | YA TravelTime account | API key in Infisical | Used by the `/migrate` admin flow to precompute transit isochrones |
+| Mapbox token | YA Mapbox account (`freddie-yimby` login) | Infisical → `ya-tools` → `/pop-squared` | Public token for base maps |
+| Secrets | YIMBY Alliance Infisical | `ya-tools` project, `/pop-squared` folder | See "Keys & secrets" below |
+
+## Running it locally
+
+You need:
+
+- [Node.js](https://nodejs.org) v20+
+- The [Infisical CLI](https://infisical.com/docs/cli/overview): `brew install infisical/get-cli/infisical`
 
 ```bash
-bash scripts/setup.sh
-npm run dev
-```
-
-The setup script will:
-1. Install npm dependencies
-2. Prompt for a Mapbox public token (if `.env.local` doesn't exist)
-3. Download the ~461MB GHSL population GeoTIFF
-
-Then open http://localhost:3000.
-
-## Prerequisites
-
-- **Node.js** >= 18
-- **Mapbox public token** (free): sign up at https://account.mapbox.com/, go to Access Tokens, copy the default public token (starts with `pk.`). The token goes in `.env.local` as `NEXT_PUBLIC_MAPBOX_TOKEN`.
-- **~500MB disk space** for the population data download
-
-## Manual Setup
-
-If you prefer to set up step by step:
-
-```bash
-# 1. Install dependencies
+infisical login                  # one-time, opens browser
+cd pop-squared
 npm install
-
-# 2. Create .env.local with your Mapbox token
-cp .env.example .env.local
-# Edit .env.local and replace the placeholder with your pk.* token
-
-# 3. Download population data (~461MB)
-bash scripts/download-data.sh
-
-# 4. Start dev server
-npm run dev
+npm run dev                      # http://localhost:3000
 ```
 
-## Non-Interactive Setup (CI / AI Agents)
+That's it — `npm run dev` is wired to fetch all 10 env vars (Mapbox token, R2 credentials, TravelTime API key, GeoTIFF/TravelTime data URLs) from **Infisical → `ya-tools` → `/pop-squared` → Development**. There's no `.env.local` to populate; the project deliberately forbids on-disk secrets after the 2026-05 secrets-management migration.
 
-If you already have the Mapbox token, pass it as an environment variable to skip the interactive prompt:
+If `npm run dev` complains about Infisical, you probably haven't run `infisical login` yet, or you don't have access to the YA `ya-tools` Infisical project — ask whoever has admin to invite you.
 
-```bash
-NEXT_PUBLIC_MAPBOX_TOKEN=pk.your_token_here bash scripts/setup.sh
-npm run dev
-```
+> **Old setup scripts (`scripts/setup.sh`, `scripts/download-data.sh`) are no longer required for local dev.** They were used in the original flow that pulled the world GeoTIFF onto your laptop. The current flow reads it directly from R2 via `GEOTIFF_URL`. The scripts still work if you want to develop offline, but they're not the recommended path.
 
-## API
+## How to make changes
 
-**POST** `/api/population`
+You'll mostly do this by asking Claude Code in this folder. A typical flow:
 
-```json
-{ "lat": 51.5, "lng": -0.1, "radiusKm": 10 }
-```
+1. Open `pop-squared` in Claude Code
+2. Describe the change in plain English ("change the colour ramp on the population radius rings", "add a tooltip showing population density per ring", "investigate why the UK transit overlay isn't loading for Glasgow")
+3. Claude reads `CLAUDE.md` and follows the conventions there
+4. Review the diff
+5. Ask Claude to commit and push to `master` — Vercel auto-deploys within ~2 minutes
 
-Returns:
+### Good things to ask Claude
 
-```json
-{
-  "totalPopulation": 3842156,
-  "inverseSqSum": 285643.12,
-  "inverseSqNormalized": 8234.56,
-  "rings": [
-    { "innerKm": 0, "outerKm": 1, "population": 12500, "inverseSqContribution": 45000.0, "areaSqKm": 3.1, "density": 4032 }
-  ],
-  "pixelsProcessed": 314,
-  "computeTimeMs": 42,
-  "center": { "lat": 51.5, "lng": -0.1 },
-  "radiusKm": 10
-}
-```
+- "Change the colour palette on the population radius rings"
+- "Add a new comparison preset called X with these two locations"
+- "Why does the transit overlay show no data for [city]? Investigate."
+- "List every map mode and compare mode this app supports"
+- "Run the project locally so I can see my changes"
 
-## How It Works
+### Things to be careful about
 
-### Circle Population
-Simple sum of all people within the chosen radius, read from the ~1km resolution GHSL raster grid.
+- **Don't change R2 file paths** in `GEOTIFF_URL` or `TRAVEL_TIME_URL` without verifying the new URL exists in the bucket. The map silently shows nothing if the raster URL 404s.
+- **`/migrate` and the data-recompute API routes are dev-only.** They're gated by `NEXT_PUBLIC_DEV_MODE=true` (set in Infisical's `Development` env, *not* `Production`). Don't enable that flag in Production — it exposes admin endpoints publicly.
+- **TravelTime API has a per-month query budget.** The `/migrate` recompute flow can burn through it quickly. Confirm before running a fresh recompute for a new city.
 
-### Inverse-Square Gravity
+## Deployment
 
-Each ~1km pixel has a population value P at distance r from the clicked point.
+**Push to `master` → Vercel auto-deploys within 1–2 minutes.**
 
-- **Raw** = Σ(P / r²) — analogous to gravitational pull. A person 1km away contributes 100× more than a person 10km away. Higher values mean more people packed close to the point. Units: people/km².
-- **Normalized** = Raw / Σ(1/r²) — divides out the distance weighting to give a distance-weighted average population per cell. This removes the effect of the chosen radius, so you can compare locations fairly regardless of the radius setting.
+- **Where to see deploy status:** Vercel dashboard → ya-projects → pop-squared.
+- **Roll back:** Vercel → Deployments → pick a previous "Ready" → ⋯ menu → "Promote to Production".
+- **Preview deploys:** every PR gets one with its own URL.
 
-Minimum distance is clamped to 0.1km to avoid division-by-zero for the pixel containing the clicked point.
+> **TODO — Vercel sync not yet configured for this project.** As of 2026-05-07 the Infisical→Vercel integration is set up for `public-mapping` and `streetvotes-site`, but **not** for `pop-squared`. Right now the live deploy is using whatever env vars are stored directly in the Vercel project, *not* Infisical. Until the sync is configured, **changing values in Infisical Production will not update the live site**. To finish the setup: in Infisical → `ya-tools` → Integrations → Vercel, add an integration mapping `Production / /pop-squared` → Vercel `pop-squared` project / Production env. Before turning it on, mirror current Vercel prod env vars into `Infisical → ya-tools → Production → /pop-squared` (otherwise the sync overwrites Vercel with whatever's in Infisical, including missing keys). See `electoral-scenarios/CLAUDE.md` for the same TODO note in case you want a full template.
 
-## Project Structure
+## Keys & secrets
 
-```
-src/app/page.tsx              Main page: map + sidebar
-src/app/api/population/route.ts  POST endpoint
-src/lib/population.ts         Core GeoTIFF reading + computation
-src/lib/geo.ts                Haversine distance, bounding box
-src/lib/rings.ts              Adaptive ring boundaries
-src/lib/circle-geojson.ts     GeoJSON circle for map overlay
-src/hooks/usePopulation.ts    Fetch hook with abort controller
-src/components/               Map, Controls, Results, RingTable
-scripts/setup.sh              One-command project setup
-scripts/download-data.sh      GHSL data download
-data/                         GeoTIFF files (gitignored)
-```
+All 10 env vars live in **Infisical → `ya-tools` → `/pop-squared`** (Development for local, Production once Vercel sync is configured):
 
-## Tech Stack
+| Var | Purpose | Required |
+|---|---|---|
+| `NEXT_PUBLIC_MAPBOX_TOKEN` | Mapbox base map (browser-exposed) | yes |
+| `GEOTIFF_URL` | R2 URL of the world population GeoTIFF | yes |
+| `TRAVEL_TIME_URL` | R2 URL prefix for precomputed travel-time JSON files | yes (UK transit overlay) |
+| `NEXT_PUBLIC_DEV_MODE` | Enables `/migrate` admin dashboard + recompute APIs | dev only — never in Production |
+| `TRAVELTIME_APP_ID` | TravelTime API app ID | needed only for `/migrate` recompute |
+| `TRAVELTIME_API_KEY` | TravelTime API key | needed only for `/migrate` recompute |
+| `R2_ACCOUNT_ID` | YA Cloudflare account ID | needed only for `scripts/deploy-r2.sh` |
+| `R2_ACCESS_KEY_ID` | R2 API access key ID | needed only for deploy scripts |
+| `R2_SECRET_KEY` | R2 API secret | needed only for deploy scripts |
+| `R2_BUCKET` | R2 bucket name (`pop-squared-data`) | needed only for deploy scripts |
 
-- Next.js 16, TypeScript, Tailwind CSS v4
-- Mapbox GL JS (direct, no wrapper)
-- `geotiff` npm package for server-side raster reading
+To rotate any of them: change in Infisical (web UI or CLI), and once the Vercel sync is configured it will push to the live deploy. For now, you'd also need to update the Vercel project's env vars manually until the sync is set up.
 
-## Data Source
+## When the current owner leaves
 
-GHSL GHS-POP R2023A, epoch 2025, 30-arcsecond (~1km), EPSG:4326. Published by the European Commission Joint Research Centre.
+1. **Vercel** — `pop-squared` project is already on the `ya-projects` team. Add the new owner as a Team Member; remove the leaver.
+2. **GitHub** — repo is in `YIMBYAlliance` org. Standard org-member changes.
+3. **Infisical** — confirm the new owner has access to the `ya-tools` Infisical project with at least Editor permissions on Development + Production.
+4. **Cloudflare R2** — the bucket is on the YA Cloudflare account. Confirm successor admin access.
+5. **Mapbox** — token is on the shared `freddie-yimby` login (despite the name, it's an org-owned account). Confirm successor has access.
+6. **TravelTime** — API key is per-account. If the account holder is leaving, transfer/regenerate.
+
+## When something breaks
+
+- **Map is blank or shows the basemap only** → invalid `NEXT_PUBLIC_MAPBOX_TOKEN`. Verify in Infisical and via mapbox.com → Account → Tokens.
+- **Population numbers come back as zero** → `GEOTIFF_URL` either points at a missing R2 object or has a CORS/range-request problem. `curl -I "<url>"` to confirm 200, and check that the R2 bucket allows public reads.
+- **Transit overlay shows nothing for UK cities** → either the city doesn't have precomputed isochrones in R2 (run `/migrate` in dev), or `TRAVEL_TIME_URL` points at the wrong R2 prefix.
+- **Vercel build fails after a push** → check Vercel build logs. Usually a TypeScript error that wasn't caught locally; run `npx tsc --noEmit` to surface.
+- **`/migrate` returns 404 in production** → that's intentional. Those routes are gated behind `NEXT_PUBLIC_DEV_MODE=true`. They only build when that flag is set.
+
+## Open questions / known issues
+
+- **Vercel sync (Infisical → Vercel) not yet configured.** See "Deployment" above.
+- **No automated tests.** The only quality gate is `npm run lint` and `npx tsc --noEmit`.
+- **TravelTime API budget is shared** with whatever else uses the same account. Heavy `/migrate` runs should be planned with whoever else has it.
+- **The world GeoTIFF on R2 is ~461MB.** Range requests work fine via `geotiff` npm package, but if R2 ever moves region or changes pricing, this is a non-trivial cost line.
+
+For deeper technical detail (architecture, conventions, gotchas), see `CLAUDE.md`.
